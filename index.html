@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon Lander</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: black;
+        }
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-family: "Comic Sans MS", cursive, sans-serif;
+            font-size: 20px;
+            color: blue;
+            background-color: white;
+            border: 2px solid blue;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        #startButton:hover {
+            background-color: lightblue;
+        }
+        #gameTitle {
+            position: absolute;
+            top: 0px;
+            width: 100%;
+            text-align: center;
+            font-family: "Comic Sans MS", cursive, sans-serif;
+            font-size: 50px;
+            color: white;
+            z-index: 10;
+        }
+        .fuel {
+            font-size: 24px; /* Aumentar el tamaño de la fuente */
+        }
+        #gameTitle span:nth-child(1) { color: red; }
+        #gameTitle span:nth-child(2) { color: orange; }
+        #gameTitle span:nth-child(3) { color: yellow; }
+        #gameTitle span:nth-child(4) { color: green; }
+        #gameTitle span:nth-child(5) { color: blue; }
+        #gameTitle span:nth-child(6) { color: indigo; }
+        #gameTitle span:nth-child(7) { color: violet; }
+    </style>
+</head>
+<body>
+    <div id="gameTitle">
+        <span>M</span><span>o</span><span>o</span><span>n</span> <span>L</span><span>a</span><span>n</span><span>d</span><span>e</span><span>r</span>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <button id="startButton">Iniciar</button>
+    <script src="js/GameManager.js"></script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+//#region Configuración inical
 // Configuración inicial
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -33,6 +34,9 @@ const landingZone = {
     height: 20,
 };
 
+// Variables para partículas de explosión
+let isThrusting = false;
+
 // Almacenar puntos del suelo
 let groundPoints = [];
 
@@ -51,13 +55,13 @@ silencio -> 0
 
 
 const N = {  //Notas por octava y silencios
-    c3: {freq:130.81, duration: 400}, d3: {freq:146.83, duration: 400}, e3: {freq:164.81, duration: 400}, f3: {freq:174.61, duration: 400}, g3: {freq:196, duration: 400}, a3: {freq:220, duration: 400}, b3: {freq:246.94, duration: 400},
-    c4: {freq:261.63, duration: 400}, d4: {freq:293.66, duration: 400}, e4: {freq:329.63, duration: 400}, f4: {freq:349.23, duration: 400}, g4: {freq:392, duration: 400}, a4: {freq:440, duration: 400}, b4: {freq:493.88, duration: 400},
-    c5: {freq:523.25, duration: 400}, d5: {freq:587.33, duration: 400}, e5: {freq:659.25, duration: 400}, f5: {freq:698.46, duration: 400}, g5: {freq:784, duration: 400}, a5: {freq:880, duration: 400}, b5: {freq:987.77, duration: 400},
-    c3s: {freq:138.59, duration: 400}, d3s: {freq:155.56, duration: 400}, f3s: {freq:185.00, duration: 400}, g3s: {freq:207.65, duration: 400}, a3s: {freq:233.08, duration: 400},
-    c4s: {freq:277.18, duration: 400}, d4s: {freq:311.13, duration: 400}, f4s: {freq:369.99, duration: 400}, g4s: {freq:415.30, duration: 400}, a4s: {freq:466.16, duration: 400},
-    c5s: {freq:554.37, duration: 400}, d5s: {freq:622.25, duration: 400}, f5s: {freq:739.99, duration: 400}, g5s: {freq:830.61, duration: 400}, a5s: {freq:932.33, duration: 400},
-    s0: {freq:0, duration: 50},s1: {freq:0, duration:100},s2:{freq:0, duration:200},s3:{freq:0, duration:400},s4:{freq:0, duration:800},s5:{freq:0, duration:1600},
+    c3: { freq: 130.81, duration: 400 }, d3: { freq: 146.83, duration: 400 }, e3: { freq: 164.81, duration: 400 }, f3: { freq: 174.61, duration: 400 }, g3: { freq: 196, duration: 400 }, a3: { freq: 220, duration: 400 }, b3: { freq: 246.94, duration: 400 },
+    c4: { freq: 261.63, duration: 400 }, d4: { freq: 293.66, duration: 400 }, e4: { freq: 329.63, duration: 400 }, f4: { freq: 349.23, duration: 400 }, g4: { freq: 392, duration: 400 }, a4: { freq: 440, duration: 400 }, b4: { freq: 493.88, duration: 400 },
+    c5: { freq: 523.25, duration: 400 }, d5: { freq: 587.33, duration: 400 }, e5: { freq: 659.25, duration: 400 }, f5: { freq: 698.46, duration: 400 }, g5: { freq: 784, duration: 400 }, a5: { freq: 880, duration: 400 }, b5: { freq: 987.77, duration: 400 },
+    c3s: { freq: 138.59, duration: 400 }, d3s: { freq: 155.56, duration: 400 }, f3s: { freq: 185.00, duration: 400 }, g3s: { freq: 207.65, duration: 400 }, a3s: { freq: 233.08, duration: 400 },
+    c4s: { freq: 277.18, duration: 400 }, d4s: { freq: 311.13, duration: 400 }, f4s: { freq: 369.99, duration: 400 }, g4s: { freq: 415.30, duration: 400 }, a4s: { freq: 466.16, duration: 400 },
+    c5s: { freq: 554.37, duration: 400 }, d5s: { freq: 622.25, duration: 400 }, f5s: { freq: 739.99, duration: 400 }, g5s: { freq: 830.61, duration: 400 }, a5s: { freq: 932.33, duration: 400 },
+    s0: { freq: 0, duration: 50 }, s1: { freq: 0, duration: 100 }, s2: { freq: 0, duration: 200 }, s3: { freq: 0, duration: 400 }, s4: { freq: 0, duration: 800 }, s5: { freq: 0, duration: 1600 },
 
 };
 
@@ -74,9 +78,9 @@ re re fa la la s3 sol sol mi5 s1
 do5 mi mi s1 re la s1 sol do5 s0 mi mi mi s3
 */
 
-const songNotes = [   
-    N.s4, 
-    N.c4, N.c4, N.e4, N.g4, N.g4, N.s2, N.g4, N.s0, N.g4, N.s2, N.e4, N.s0, N.e4, N.s1,   
+const songNotes = [
+    N.s4,
+    N.c4, N.c4, N.e4, N.g4, N.g4, N.s2, N.g4, N.s0, N.g4, N.s2, N.e4, N.s0, N.e4, N.s1,
     N.c4, N.c4, N.e4, N.g4, N.g4, N.s2, N.g4, N.s0, N.g4, N.s2, N.f4, N.s0, N.f4, N.s1,
     N.d4, N.d4, N.f4, N.a4, N.a4, N.s2, N.f4, N.s0, N.f4, N.s2, N.d4, N.s0, N.d4, N.s1,
     N.d4, N.d4, N.f4, N.a4, N.a4, N.s1, N.e5, N.e5, N.s0, N.c5, N.c5, N.s1,
@@ -86,10 +90,64 @@ const songNotes = [
     N.c5, N.e4, N.e4, N.s1, N.d4, N.a4, N.s1, N.g4, N.c5, N.s0, N.e4, N.e4, N.e4, N.s3,
 ];
 
-const song = songNotes.map(note => 
-    {  return {freq: note.freq, duration: note.duration};}
+const song = songNotes.map(note => { return { freq: note.freq, duration: note.duration }; }
 );
 
+
+// Dimensiones y posición del botón de música
+const musicButton = {
+    x: canvas.width - 110,
+    y: 10,
+    width: 100,
+    height: 40,
+};
+
+// Almacenar partículas de la explosión
+let explosionParticles = [];
+
+// Hacer que el canvas sea enfocable
+canvas.setAttribute('tabindex', '0');
+
+//#endregion
+
+//#region Funciones de utilidad 
+// Generar suelo con montañas
+/**
+     * Genera un terreno representado por puntos en un lienzo.
+     *
+     *    1.- Inicializa un arreglo vacío para almacenar los puntos del terreno.
+     *    2.- Comienza desde el borde izquierdo del lienzo y avanza en segmentos horizontales.
+     *    3.- Para cada segmento, calcula una altura aleatoria para un pico y su posición en el eje X.
+     *    4.- Agrega dos puntos al arreglo: uno para el pico y otro para la base del segmento.
+     *    5.- Continúa hasta cubrir todo el ancho del lienzo.
+     *
+     * @global
+     * @throws {ReferenceError} Si `canvas` o `groundPoints` no están definidos en el contexto global.
+     * @example
+     *   Ejemplo de uso:
+     *   generateGround();
+     *   // Después de ejecutar, `groundPoints` contendrá un conjunto de puntos que representan el terreno.
+     */
+function generateGround() {
+    groundPoints = [];
+    let currentX = 0;
+    while (currentX < canvas.width) {
+        const peakHeight = Math.random() * 50 + 15; // Altura aleatoria de los picos
+        const segmentWidth = Math.random() * 50 + 80; // Ancho aleatorio de los segmentos
+        groundPoints.push({
+            x: currentX + segmentWidth / 2,
+            y: canvas.height - peakHeight,
+        });
+        groundPoints.push({
+            x: currentX + segmentWidth,
+            y: canvas.height,
+        });
+        currentX += segmentWidth;
+    }
+}
+//#endregion
+
+//#region funciones para el Audio
 // Función para reproducir una nota
 function playBeep(freq, duration) {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -134,70 +192,130 @@ function stopSong() {
 function toggleMusic() {
     if (isMusicPlaying) {
         isMusicPlaying = false;
-        stopSong();        
+        stopSong();
     } else {
         isMusicPlaying = true;
         playSong();
-    }    
+    }
     draw(); // Redibujar para actualizar el estado del botón inmediatamente
 }
 
+/**
+ * Reproduce un sonido de explosión.
+ *
+ *    1.- Genera múltiples tonos descendentes para simular una explosión.
+ *    2.- Utiliza la función `playBeep` para reproducir cada tono.
+ *
+ * @returns {void} No retorna ningún valor.
+ */
+function playExplosionSound() {
+    const explosionTones = [
+        { freq: 400, duration: 100 },
+        { freq: 300, duration: 100 },
+        { freq: 200, duration: 100 },
+        { freq: 100, duration: 100 },
+    ];
+
+    let delay = 0;
+    explosionTones.forEach(tone => {
+        setTimeout(() => playBeep(tone.freq, tone.duration), delay);
+        delay += tone.duration;
+    });
+}
+
+//#endregion
+
+//#region Gestión de eventos de teclado
+
 // Manejo de controles
-let isThrusting = false;
 window.addEventListener('keydown', /**
-     * Maneja los eventos de pulsación de teclas para controlar un objeto "lander".
-     *
-     * Flujos de ejecución:
-     *    1.- Registra la tecla presionada en la consola para propósitos de depuración.
-     *    2.- Si la tecla presionada es 'ArrowUp' y el "lander" tiene combustible, activa el empuje.
-     *    3.- Si la tecla presionada es 'ArrowRight', rota el "lander" en sentido horario.
-     *    4.- Si la tecla presionada es 'ArrowLeft', rota el "lander" en sentido antihorario.
-     *
-     * @param {KeyboardEvent} e Evento de teclado que contiene información sobre la tecla presionada.
-     * @returns {void} No retorna ningún valor.
-     * @throws {Error} Si el objeto "lander" no está definido o no tiene las propiedades necesarias.
-     * @example
-     *   Ejemplo de uso:
-     * document.addEventListener('keydown', (e) => {
-     *     manejarTeclaPresionada(e);
-     * });
-     */
+    * Maneja los eventos de pulsación de teclas para controlar un objeto "lander".
+    *
+    * Flujos de ejecución:
+    *    1.- Registra la tecla presionada en la consola para propósitos de depuración.
+    *    2.- Si la tecla presionada es 'ArrowUp' y el "lander" tiene combustible, activa el empuje.
+    *    3.- Si la tecla presionada es 'ArrowRight', rota el "lander" en sentido horario.
+    *    4.- Si la tecla presionada es 'ArrowLeft', rota el "lander" en sentido antihorario.
+    *
+    * @param {KeyboardEvent} e Evento de teclado que contiene información sobre la tecla presionada.
+    * @returns {void} No retorna ningún valor.
+    * @throws {Error} Si el objeto "lander" no está definido o no tiene las propiedades necesarias.
+    * @example
+    *   Ejemplo de uso:
+    * document.addEventListener('keydown', (e) => {
+    *     manejarTeclaPresionada(e);
+    * });
+    */
     (e) => {
-    console.log(`Key down: ${e.code}`); // Depuración
-    if (e.code === 'ArrowUp' && lander.fuel > 0) { // Cambiar de 'Space' a 'ArrowUp'
-        isThrusting = true;
-    } else if (e.code === 'ArrowRight') { // Rotar en sentido horario
-        lander.rotationAngle += 5; // Actualizar propiedad en lander
-    } else if (e.code === 'ArrowLeft') { // Rotar en sentido antihorario
-        lander.rotationAngle -= 5; // Actualizar propiedad en lander
-    } else if (e.code === 'KeyS') {
-        toggleMusic(); // Usar el nuevo método
-    }
-});
+        console.log(`Key down: ${e.code}`); // Depuración
+        if (e.code === 'ArrowUp' && lander.fuel > 0) { // Cambiar de 'Space' a 'ArrowUp'
+            isThrusting = true;
+        } else if (e.code === 'ArrowRight') { // Rotar en sentido horario
+            lander.rotationAngle += 5; // Actualizar propiedad en lander
+        } else if (e.code === 'ArrowLeft') { // Rotar en sentido antihorario
+            lander.rotationAngle -= 5; // Actualizar propiedad en lander
+        } else if (e.code === 'KeyS') {
+            toggleMusic(); // Usar el nuevo método
+        }
+    });
 window.addEventListener('keyup', /**
-     * Maneja el evento de liberación de una tecla (keyup).
-     *
-     *    1.- Registra en la consola el código de la tecla liberada para propósitos de depuración.
-     *    2.- Verifica si la tecla liberada es la flecha hacia arriba ('ArrowUp').
-     *    3.- Si la tecla es 'ArrowUp', desactiva el estado de propulsión estableciendo `isThrusting` en `false`.
-     *
-     * @param {KeyboardEvent} e El evento de teclado que contiene información sobre la tecla liberada.
-     *    - `e.code`: Representa el código de la tecla liberada.
-     * @returns {void} No retorna ningún valor.
-     * @throws {Error} Si el objeto del evento `e` no contiene la propiedad `code`.
-     * @example
-     *   Ejemplo de uso:
-     * document.addEventListener('keyup', (e) => {
-     *     // Llama a esta función cuando se libera una tecla
-     * });
-     */
+    * Maneja el evento de liberación de una tecla (keyup).
+    *
+    *    1.- Registra en la consola el código de la tecla liberada para propósitos de depuración.
+    *    2.- Verifica si la tecla liberada es la flecha hacia arriba ('ArrowUp').
+    *    3.- Si la tecla es 'ArrowUp', desactiva el estado de propulsión estableciendo `isThrusting` en `false`.
+    *
+    * @param {KeyboardEvent} e El evento de teclado que contiene información sobre la tecla liberada.
+    *    - `e.code`: Representa el código de la tecla liberada.
+    * @returns {void} No retorna ningún valor.
+    * @throws {Error} Si el objeto del evento `e` no contiene la propiedad `code`.
+    * @example
+    *   Ejemplo de uso:
+    * document.addEventListener('keyup', (e) => {
+    *     // Llama a esta función cuando se libera una tecla
+    * });
+    */
     (e) => {
-    console.log(`Key up: ${e.code}`); // Depuración
-    if (e.code === 'ArrowUp') { // Cambiar de 'Space' a 'ArrowUp'
-        isThrusting = false;
+        console.log(`Key up: ${e.code}`); // Depuración
+        if (e.code === 'ArrowUp') { // Cambiar de 'Space' a 'ArrowUp'
+            isThrusting = false;
+        }
+    });
+
+// Manejar clics en el botón de música
+canvas.addEventListener('mouseup', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    if (
+        clickX > musicButton.x &&
+        clickX < musicButton.x + musicButton.width &&
+        clickY > musicButton.y &&
+        clickY < musicButton.y + musicButton.height
+    ) {
+        toggleMusic(); // Invocar toggleMusic al hacer clic
     }
 });
 
+// Manejar toques en el botón de música
+canvas.addEventListener('touchend', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touchX = e.touches[0].clientX - rect.left;
+    const touchY = e.touches[0].clientY - rect.top;
+
+    if (
+        touchX > musicButton.x &&
+        touchX < musicButton.x + musicButton.width &&
+        touchY > musicButton.y &&
+        touchY < musicButton.y + musicButton.height
+    ) {
+        toggleMusic(); // Usar el nuevo método
+    }
+});
+//#endregion
+
+//#region Eventos de ratón y táctiles
 // Función para manejar clics o toques en el canvas
 function handleInputEvent(eventType, x, y) {
     const rect = canvas.getBoundingClientRect();
@@ -224,6 +342,71 @@ function handleInputEvent(eventType, x, y) {
     }
 }
 
+
+// Verificar clics en el canvas
+canvas.addEventListener('click', /**
+    * Maneja el evento de clic para reiniciar el juego si el botón de reinicio está visible.
+    *
+    * Detalles del flujo de ejecución:
+    *  1. Verifica si el botón de reinicio está habilitado (`showRestartButton`).
+    *  2. Obtiene las coordenadas del clic del usuario en relación con el lienzo (`canvas`).
+    *  3. Calcula si las coordenadas del clic están dentro del área del botón de reinicio.
+    *  4. Si el clic está dentro del área del botón, llama a la función `restartGame` para reiniciar el juego.
+    *
+    * @param {MouseEvent} e El evento de clic del ratón que contiene las coordenadas del clic.
+    * @throws {Error} Si el lienzo (`canvas`) no está definido o no tiene un rectángulo delimitador válido.
+    * @example
+    * // Ejemplo de uso:
+    * canvas.addEventListener('click', handleRestartClick);
+    * 
+    * function handleRestartClick(e) {
+    *   // Lógica del evento de clic para reiniciar el juego.
+    * }
+    */
+    (e) => {
+        if (showRestartButton) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            if (
+                clickX > canvas.width / 2 - 50 &&
+                clickX < canvas.width / 2 + 50 &&
+                clickY > canvas.height / 2 + 30 &&
+                clickY < canvas.height / 2 + 70
+            ) {
+                restartGame();
+            }
+        }
+    });
+
+// Asegurar que el canvas capture el foco al hacer clic
+canvas.addEventListener('click', /**
+    * Establece el foco en un elemento de tipo canvas.
+    *
+    * @details
+    *    1.- Llama al método `focus()` del objeto `canvas` para que el elemento reciba el foco.
+    *    2.- Este método es útil para garantizar que el usuario pueda interactuar directamente con el canvas, 
+    *        como en aplicaciones gráficas o juegos.
+    *
+    * @throws {ReferenceError} Si el objeto `canvas` no está definido o no es accesible.
+    * @example
+    *   Ejemplo de uso:
+    *   // Asegúrate de que el elemento canvas esté definido en el DOM:
+    *   const canvas = document.getElementById('miCanvas');
+    *   canvas.focus(); // El foco se establece en el canvas.
+    */
+    () => {
+        canvas.focus();
+    });
+
+
+// Asignar evento al botón
+startButton.addEventListener('click', startGame);
+
+//#endregion
+
+//#region Funciones de control del player
 // Función para activar el impulso
 function activateThrust() {
     isThrusting = true;
@@ -252,140 +435,9 @@ canvas.addEventListener('touchend', (e) => {
     const touch = e.changedTouches[0];
     handleInputEvent('end', touch.clientX, touch.clientY);
 });
+//#endregion
 
-// Generar suelo con montañas
-/**
-     * Genera un terreno representado por puntos en un lienzo.
-     *
-     *    1.- Inicializa un arreglo vacío para almacenar los puntos del terreno.
-     *    2.- Comienza desde el borde izquierdo del lienzo y avanza en segmentos horizontales.
-     *    3.- Para cada segmento, calcula una altura aleatoria para un pico y su posición en el eje X.
-     *    4.- Agrega dos puntos al arreglo: uno para el pico y otro para la base del segmento.
-     *    5.- Continúa hasta cubrir todo el ancho del lienzo.
-     *
-     * @global
-     * @throws {ReferenceError} Si `canvas` o `groundPoints` no están definidos en el contexto global.
-     * @example
-     *   Ejemplo de uso:
-     *   generateGround();
-     *   // Después de ejecutar, `groundPoints` contendrá un conjunto de puntos que representan el terreno.
-     */
-    function generateGround() {
-    groundPoints = [];
-    let currentX = 0;
-    while (currentX < canvas.width) {
-        const peakHeight = Math.random() * 50 + 15; // Altura aleatoria de los picos
-        const segmentWidth = Math.random() * 50 + 80; // Ancho aleatorio de los segmentos
-        groundPoints.push({
-            x: currentX + segmentWidth / 2,
-            y: canvas.height - peakHeight,
-        });
-        groundPoints.push({
-            x: currentX + segmentWidth,
-            y: canvas.height,
-        });
-        currentX += segmentWidth;
-    }
-}
-
-// Lógica del juego
-/**
-     * Actualiza el estado del módulo lunar en cada fotograma del juego.
-     *
-     *    1.- Verifica si el juego ha terminado; si es así, detiene la ejecución.
-     *    2.- Aplica la gravedad al módulo lunar, incrementando su velocidad vertical.
-     *    3.- Si el empuje está activo y hay combustible disponible:
-     *        - Calcula el empuje vectorial basado en el ángulo de rotación.
-     *        - Ajusta las velocidades horizontal y vertical del módulo.
-     *        - Reduce la cantidad de combustible disponible.
-     *    4.- Actualiza la posición del módulo lunar en el eje X e Y según sus velocidades.
-     *    5.- Limita la posición del módulo dentro del área de juego:
-     *        - Si el módulo excede los límites horizontales, lo reposiciona y detiene su velocidad horizontal.
-     *        - Si el módulo excede los límites verticales superiores, lo reposiciona y detiene su velocidad vertical.
-     *        - Si el módulo excede los límites verticales inferiores, lo reposiciona, marca el juego como terminado y verifica el aterrizaje.
-     *
-     * @throws {Error} Si ocurre un error inesperado durante la actualización del estado del módulo.
-     * @example
-     *   Ejemplo de uso:
-     *   // Llamar a esta función en cada iteración del bucle principal del juego.
-     *   update();
-     */
-    function update() {
-    if (isGameOver) return;
-
-    // Aplicar gravedad
-    lander.velocityY += gravity;
-
-    // Aplicar empuje vectorial
-    if (isThrusting && lander.fuel > 0) {
-        const angleInRadians = (lander.rotationAngle * Math.PI) / 180;
-        lander.velocityX += Math.sin(angleInRadians) * -thrust;
-        lander.velocityY += Math.cos(angleInRadians) * thrust;
-        lander.fuel -= 0.1; // Reducir el combustible
-    }
-
-    // Actualizar posición
-    lander.x += lander.velocityX;
-    lander.y += lander.velocityY;
-
-    // Limitar posición dentro del área de juego
-    if (lander.x < 0) {
-        lander.x = 0;
-        lander.velocityX = 0;
-    }
-    if (lander.x > canvas.width) {
-        lander.x = canvas.width;
-        lander.velocityX = 0;
-    }
-    if (lander.y < 100) {
-        lander.y = 100;
-        lander.velocityY = 0;
-    }
-    if (lander.y > canvas.height) { // Cambiar la verificación para el nuevo pivote
-        lander.y = canvas.height;
-        isGameOver = true;
-        checkLanding();
-    }
-}
-
-/**
-     * Verifica si el módulo aterriza correctamente en la zona de aterrizaje.
-     *
-     * Este método evalúa si el módulo espacial cumple con las condiciones necesarias para un aterrizaje exitoso:
-     *    1.- Comprueba si el módulo está dentro de los límites de la zona de aterrizaje (coordenadas x e y).
-     *    2.- Verifica si la velocidad vertical del módulo es segura para aterrizar.
-     *    3.- Si ambas condiciones se cumplen, ajusta la posición del módulo y muestra un mensaje de éxito.
-     *    4.- Si alguna condición falla, muestra un mensaje de colisión.
-     *    5.- Marca el juego como terminado y habilita el botón de reinicio.
-     *
-     * @throws {Error} Si las propiedades `lander` o `landingZone` no están definidas.
-     * @example
-     *   Ejemplo de uso:
-     *   // Supongamos que `lander` y `landingZone` están definidos en el contexto global:
-     *   checkLanding();
-     *   // Resultado esperado:
-     *   // Si el módulo aterriza correctamente: message = '¡Aterrizaje exitoso!'
-     *   // Si falla el aterrizaje: message = '¡Te has estrellado!'
-     */
-    function checkLanding() {
-    const withinLandingZone =
-        lander.x > landingZone.x && // El lado izquierdo del módulo está dentro de la zona
-        lander.x < landingZone.x + landingZone.width && // El lado derecho del módulo está dentro de la zona
-        lander.y >= landingZone.y; // La parte inferior del módulo toca la zona de aterrizaje
-
-    const safeSpeed = lander.velocityY < 1;
-
-    if (withinLandingZone && safeSpeed) {
-        lander.y = landingZone.y; // Ajustar la posición para que esté justo en la zona de aterrizaje
-        message = '¡Aterrizaje exitoso!';
-    } else {
-        createExplosion(lander.x, lander.y); // Crear partículas de explosión
-        playExplosionSound(); // Reproducir sonido de explosión
-        message = '¡Te has estrellado!';
-    }
-    isGameOver = true;
-    showRestartButton = true;
-}
+//#region Funciones de dibujo
 
 // Dibujar suelo con montañas
 /**
@@ -415,7 +467,7 @@ canvas.addEventListener('touchend', (e) => {
      * const groundPoints = [{ x: 50, y: 300 }, { x: 150, y: 250 }, { x: 250, y: 300 }];
      * drawGround(ctx, canvas, groundPoints);
      */
-    function drawGround() {
+function drawGround() {
     ctx.beginPath();
     ctx.moveTo(0, canvas.height); // Iniciar desde la esquina inferior izquierda
     for (const point of groundPoints) {
@@ -447,7 +499,7 @@ canvas.addEventListener('touchend', (e) => {
      *   const landingZone = { x: 50, y: 300, width: 200, height: 50 };
      *   drawBase(ctx, landingZone);
      */
-    function drawBase() {
+function drawBase() {
     // Dibujar zona de aterrizaje
     ctx.fillStyle = 'green';
     ctx.fillRect(landingZone.x, landingZone.y, landingZone.width, landingZone.height);
@@ -485,7 +537,7 @@ canvas.addEventListener('touchend', (e) => {
      *   fuel: 100
      * }, true);
      */
-    function drawLander() {
+function drawLander() {
     ctx.save();
     ctx.translate(lander.x, lander.y); // Trasladar al pivote del módulo
     ctx.rotate((lander.rotationAngle * Math.PI) / 180); // Aplicar rotación
@@ -544,7 +596,7 @@ canvas.addEventListener('touchend', (e) => {
      * // Ejemplo de uso:
      * drawLabels(ctx, { fuel: 50, velocityY: -2.5 }, "¡Juego terminado!", true, canvas);
      */
-    function drawLabels() {
+function drawLabels() {
     // Dibujar combustible
     ctx.fillStyle = 'yellow';
     ctx.font = '20px Arial';
@@ -587,14 +639,6 @@ canvas.addEventListener('touchend', (e) => {
     }
 }
 
-// Dimensiones y posición del botón de música
-const musicButton = {
-    x: canvas.width - 110,
-    y: 10,
-    width: 100,
-    height: 40,
-};
-
 // Función para dibujar el botón de música
 function drawMusicButton() {
     console.log('el estado de isMusicPlaying es: ', isMusicPlaying);
@@ -605,294 +649,12 @@ function drawMusicButton() {
     ctx.fillText(isMusicPlaying ? 'Música: ON' : 'Música: OFF', musicButton.x + 10, musicButton.y + 25);
 }
 
-// Manejar clics en el botón de música
-canvas.addEventListener('mouseup', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    if (
-        clickX > musicButton.x &&
-        clickX < musicButton.x + musicButton.width &&
-        clickY > musicButton.y &&
-        clickY < musicButton.y + musicButton.height
-    ) {
-        toggleMusic(); // Invocar toggleMusic al hacer clic
-    }
-});
-
-// Manejar toques en el botón de música
-canvas.addEventListener('touchend', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const touchX = e.touches[0].clientX - rect.left;
-    const touchY = e.touches[0].clientY - rect.top;
-
-    if (
-        touchX > musicButton.x &&
-        touchX < musicButton.x + musicButton.width &&
-        touchY > musicButton.y &&
-        touchY < musicButton.y + musicButton.height
-    ) {
-        toggleMusic(); // Usar el nuevo método
-    }
-});
-
-/**
-     * Dibuja el contenido principal de la escena en un lienzo HTML5.
-     *
-     * @details
-     *    1.- Limpia el área completa del lienzo para preparar un nuevo dibujo.
-     *    2.- Llama a las funciones auxiliares para dibujar los diferentes elementos de la escena:
-     *        - `drawGround`: Dibuja el suelo.
-     *        - `drawBase`: Dibuja la base.
-     *        - `drawLander`: Dibuja el módulo de aterrizaje.
-     *        - `drawLabels`: Dibuja las etiquetas o información adicional.
-     *
-     * @throws {Error} Si alguna de las funciones auxiliares (`drawGround`, `drawBase`, `drawLander`, `drawLabels`) falla o no está definida.
-     * @example
-     *   Ejemplo de uso:
-     *   // Asumiendo que el contexto del lienzo (ctx) y el elemento canvas están definidos:
-     *   draw();
-     */
-    function draw() {
-    if (!isGameOver) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGround();
-    drawBase();  
-    drawLander();    
-    drawExplosionParticles(); // Dibujar partículas de la explosión
-    drawLabels();
-    drawMusicButton(); // Dibujar el botón de música
-    drawCanvasBorder(); // Dibujar el borde del canvas
-}
-
 // Función para dibujar el borde del canvas
 function drawCanvasBorder() {
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
 }
-
-// Verificar clics en el canvas
-canvas.addEventListener('click', /**
-     * Maneja el evento de clic para reiniciar el juego si el botón de reinicio está visible.
-     *
-     * Detalles del flujo de ejecución:
-     *  1. Verifica si el botón de reinicio está habilitado (`showRestartButton`).
-     *  2. Obtiene las coordenadas del clic del usuario en relación con el lienzo (`canvas`).
-     *  3. Calcula si las coordenadas del clic están dentro del área del botón de reinicio.
-     *  4. Si el clic está dentro del área del botón, llama a la función `restartGame` para reiniciar el juego.
-     *
-     * @param {MouseEvent} e El evento de clic del ratón que contiene las coordenadas del clic.
-     * @throws {Error} Si el lienzo (`canvas`) no está definido o no tiene un rectángulo delimitador válido.
-     * @example
-     * // Ejemplo de uso:
-     * canvas.addEventListener('click', handleRestartClick);
-     * 
-     * function handleRestartClick(e) {
-     *   // Lógica del evento de clic para reiniciar el juego.
-     * }
-     */
-    (e) => {
-    if (showRestartButton) {
-        const rect = canvas.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-
-        if (
-            clickX > canvas.width / 2 - 50 &&
-            clickX < canvas.width / 2 + 50 &&
-            clickY > canvas.height / 2 + 30 &&
-            clickY < canvas.height / 2 + 70
-        ) {
-            restartGame();
-        }
-    }
-});
-
-// Asegurar que el canvas capture el foco al hacer clic
-canvas.addEventListener('click', /**
-     * Establece el foco en un elemento de tipo canvas.
-     *
-     * @details
-     *    1.- Llama al método `focus()` del objeto `canvas` para que el elemento reciba el foco.
-     *    2.- Este método es útil para garantizar que el usuario pueda interactuar directamente con el canvas, 
-     *        como en aplicaciones gráficas o juegos.
-     *
-     * @throws {ReferenceError} Si el objeto `canvas` no está definido o no es accesible.
-     * @example
-     *   Ejemplo de uso:
-     *   // Asegúrate de que el elemento canvas esté definido en el DOM:
-     *   const canvas = document.getElementById('miCanvas');
-     *   canvas.focus(); // El foco se establece en el canvas.
-     */
-    () => {
-    canvas.focus();
-});
-
-// Hacer que el canvas sea enfocable
-canvas.setAttribute('tabindex', '0');
-
-/**
-     * Restablece las propiedades del módulo lunar a sus valores iniciales.
-     *
-     * Detalles del flujo de ejecución:
-     *    1.- Establece la posición horizontal del módulo lunar en el centro del lienzo.
-     *    2.- Establece la posición vertical del módulo lunar a una altura inicial de 100 píxeles.
-     *    3.- Reinicia las velocidades horizontal y vertical del módulo lunar a 0.
-     *    4.- Restaura el nivel de combustible del módulo lunar al 100%.
-     *
-     * @example
-     *   Ejemplo de uso:
-     *   resetLander();
-     *   // El módulo lunar se reinicia a su posición inicial con velocidad y combustible restaurados.
-     */
-    function resetLander() {
-        lander.x = canvas.width / 2;
-        lander.y = 100;
-        lander.velocityX = 0;
-        lander.velocityY = 0;
-        lander.fuel = 100;
-        lander.rotationAngle = 0; // Restaurar el ángulo de rotación
-    }
-
-/**
-     * Restablece el estado del juego a su configuración inicial.
-     *
-     * Detalles del flujo de ejecución:
-     *    1.- Limpia el mensaje mostrado en pantalla.
-     *    2.- Oculta el botón de reinicio del juego.
-     *    3.- Establece el estado del juego como no finalizado.
-     *    4.- Llama a la función `resetLander` para reiniciar el estado del módulo lunar.
-     *    5.- Genera un nuevo terreno llamando a la función `generateGround`.
-     *    6.- Calcula una nueva posición aleatoria para la zona de aterrizaje dentro de los límites del lienzo.
-     *    7.- Restaura el ángulo de rotación del módulo lunar a 0.
-     *
-     * @throws {Error} Si alguna de las funciones auxiliares (`resetLander` o `generateGround`) falla durante su ejecución.
-     * @example
-     *   Ejemplo de uso:
-     *   resetGameState();
-     *   // Reinicia el juego y prepara un nuevo escenario para jugar.
-     */
-    function resetGameState() {
-    message = '';
-    showRestartButton = false;
-    //isGameOver = false;
-    gameTitle.style.display='none'; //Ocultar la capa del título html
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    resetLander();    
-    generateGround();
-    landingZone.x = Math.random() * (canvas.width - landingZone.width);
-    
-}
-
-/**
-     * Muestra una cuenta regresiva en un lienzo y ejecuta una función al finalizar.
-     *
-     * Detalles del flujo de ejecución:
-     *    1.- Inicializa un contador con el valor 3.
-     *    2.- Configura un intervalo que se ejecuta cada segundo.
-     *    3.- En cada iteración del intervalo:
-     *        - Limpia el lienzo.
-     *        - Dibuja el texto de la cuenta regresiva en el centro del lienzo.
-     *        - Decrementa el contador.
-     *    4.- Cuando el contador llega a un valor menor que 0:
-     *        - Detiene el intervalo.
-     *        - Ejecuta la función proporcionada como callback.
-     *
-     * @param {Function} callback Función que se ejecutará al finalizar la cuenta regresiva.
-     *                            Debe ser una función válida que no reciba parámetros.
-     * @returns {void} No retorna ningún valor.
-     * @throws {TypeError} Si el parámetro `callback` no es una función.
-     * @example
-     *   Ejemplo de uso:
-     * showCountdown(() => {
-     *     console.log('¡Cuenta regresiva finalizada!');
-     * });
-     */
-    function showCountdown(callback) {
-    let countdown = 3;
-    let countdownInterval = setInterval(() => { // Cambiar const por let
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        draw(); // Asegurar que se dibujen los elementos del juego
-        ctx.fillStyle = 'white';
-        ctx.font = '40px Arial';
-        ctx.fillText(`Comenzando en: ${countdown}`, canvas.width / 2 - 120, canvas.height / 2);
-        countdown--;
-
-        if (countdown < 0) {
-            clearInterval(countdownInterval);
-            isGameOver = false; // Restablecer el estado del juego
-            callback(); // Ejecutar la función pasada como callback
-        }
-    }, 1000);
-}
-
-/**
-     * Reinicia el estado del juego y prepara el entorno para un nuevo inicio.
-     *
-     * Detalles del flujo de ejecución:
-     *    1.- Llama a la función `resetGameState` para restablecer el estado del juego a su configuración inicial.
-     *    2.- Muestra una cuenta regresiva mediante la función `showCountdown`, que recibe como parámetro la función `startGame` para iniciar el juego al finalizar la cuenta regresiva.
-     *    3.- Establece el foco en el elemento del lienzo (`canvas`) para garantizar que los controles del juego estén activos.
-     *
-     * @throws {Error} Si alguna de las funciones internas (`resetGameState`, `showCountdown`, o `canvas.focus`) falla durante su ejecución.
-     * @example
-     *   Ejemplo de uso:
-     *   restartGame();
-     *   // Resultado: El estado del juego se reinicia, se muestra una cuenta regresiva, y el foco se establece en el lienzo.
-     */
-    function restartGame() {    
-    resetGameState();
-    showCountdown(gameLoop); // Cambiar startGame por gameLoop
-    canvas.focus();
-}
-
-// Reiniciar el juego
-/**
-     * Inicia el juego configurando el estado inicial y mostrando una cuenta regresiva.
-     *
-     * Detalles del flujo de ejecución:
-     *    1.- Oculta el botón de inicio para evitar que se vuelva a presionar.
-     *    2.- Restablece el estado del juego a su configuración inicial.
-     *    3.- Muestra una cuenta regresiva antes de iniciar el bucle principal del juego.
-     *    4.- Asegura que el foco esté en la ventana del navegador para capturar eventos correctamente.
-     *
-     * @throws {Error} Si ocurre algún problema al restablecer el estado del juego o al iniciar la cuenta regresiva.
-     * @example
-     *   Ejemplo de uso:
-     *   startGame();
-     */
-    function startGame() {        
-    startButton.style.display = 'none'; // Ocultar el botón  
-    
-    playSong();
-    resetGameState();
-    showCountdown(gameLoop);
-    window.focus(); // Asegurar que el foco esté en el window
-}
-
-// Bucle principal
-/**
-     * Bucle principal del juego.
-     *
-     *    1.- Llama a la función `update` para actualizar el estado del juego.
-     *    2.- Llama a la función `draw` para renderizar los elementos del juego en pantalla.
-     *    3.- Utiliza `requestAnimationFrame` para programar la siguiente iteración del bucle.
-     *
-     * @function gameLoop
-     * @throws {Error} Si alguna de las funciones `update` o `draw` lanza un error.
-     * @example
-     *   Ejemplo de uso:
-     *   gameLoop(); // Inicia el bucle principal del juego.
-     */
-    function gameLoop() {
-    if(!isGameOver) update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
-// Asignar evento al botón
-startButton.addEventListener('click', startGame);
 
 /**
  * Dibuja una explosión en el lienzo en la posición del módulo lunar.
@@ -914,35 +676,6 @@ function drawExplosion(x, y) {
         ctx.arc(x, y, (i + 1) * 15, 0, Math.PI * 2);
         ctx.fillStyle = colors[i];
         ctx.fill();
-    }
-}
-
-// Almacenar partículas de la explosión
-let explosionParticles = [];
-
-/**
- * Genera partículas para la explosión.
- *
- *    1.- Crea múltiples partículas con posiciones iniciales en el centro de la explosión.
- *    2.- Asigna a cada partícula una dirección, velocidad y duración aleatorias.
- *    3.- Almacena las partículas en el arreglo `explosionParticles`.
- *
- * @param {number} x Coordenada X del centro de la explosión.
- * @param {number} y Coordenada Y del centro de la explosión.
- * @returns {void} No retorna ningún valor.
- */
-function createExplosion(x, y) {
-    explosionParticles = [];
-    for (let i = 0; i < 50; i++) {
-        explosionParticles.push({
-            x: x,
-            y: y,
-            radius: Math.random() * 5 + 2, // Tamaño aleatorio
-            color: `rgba(${Math.random() * 255}, ${Math.random() * 150}, 0, 1)`, // Colores cálidos
-            velocityX: (Math.random() - 0.5) * 4, // Velocidad horizontal
-            velocityY: (Math.random() - 0.5) * 4, // Velocidad vertical
-            life: Math.random() * 60 + 30, // Duración en frames
-        });
     }
 }
 
@@ -978,7 +711,127 @@ function drawExplosionParticles() {
     });
 }
 
-// Modificar la función checkLanding para usar la nueva explosión
+/**
+     * Dibuja el contenido principal de la escena en un lienzo HTML5.
+     *
+     * @details
+     *    1.- Limpia el área completa del lienzo para preparar un nuevo dibujo.
+     *    2.- Llama a las funciones auxiliares para dibujar los diferentes elementos de la escena:
+     *        - `drawGround`: Dibuja el suelo.
+     *        - `drawBase`: Dibuja la base.
+     *        - `drawLander`: Dibuja el módulo de aterrizaje.
+     *        - `drawLabels`: Dibuja las etiquetas o información adicional.
+     *
+     * @throws {Error} Si alguna de las funciones auxiliares (`drawGround`, `drawBase`, `drawLander`, `drawLabels`) falla o no está definida.
+     * @example
+     *   Ejemplo de uso:
+     *   // Asumiendo que el contexto del lienzo (ctx) y el elemento canvas están definidos:
+     *   draw();
+     */
+function draw() {
+    if (!isGameOver) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGround();
+    drawBase();
+    drawLander();
+    drawExplosionParticles(); // Dibujar partículas de la explosión
+    drawLabels();
+    drawMusicButton(); // Dibujar el botón de música
+    drawCanvasBorder(); // Dibujar el borde del canvas
+}
+
+//#endregion
+
+//#region Gestión de colisiones y lógica del juego
+
+/**
+     * Muestra una cuenta regresiva en un lienzo y ejecuta una función al finalizar.
+     *
+     * Detalles del flujo de ejecución:
+     *    1.- Inicializa un contador con el valor 3.
+     *    2.- Configura un intervalo que se ejecuta cada segundo.
+     *    3.- En cada iteración del intervalo:
+     *        - Limpia el lienzo.
+     *        - Dibuja el texto de la cuenta regresiva en el centro del lienzo.
+     *        - Decrementa el contador.
+     *    4.- Cuando el contador llega a un valor menor que 0:
+     *        - Detiene el intervalo.
+     *        - Ejecuta la función proporcionada como callback.
+     *
+     * @param {Function} callback Función que se ejecutará al finalizar la cuenta regresiva.
+     *                            Debe ser una función válida que no reciba parámetros.
+     * @returns {void} No retorna ningún valor.
+     * @throws {TypeError} Si el parámetro `callback` no es una función.
+     * @example
+     *   Ejemplo de uso:
+     * showCountdown(() => {
+     *     console.log('¡Cuenta regresiva finalizada!');
+     * });
+     */
+function showCountdown(callback) {
+    let countdown = 3;
+    let countdownInterval = setInterval(() => { // Cambiar const por let
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        draw(); // Asegurar que se dibujen los elementos del juego
+        ctx.fillStyle = 'white';
+        ctx.font = '40px Arial';
+        ctx.fillText(`Comenzando en: ${countdown}`, canvas.width / 2 - 120, canvas.height / 2);
+        countdown--;
+
+        if (countdown < 0) {
+            clearInterval(countdownInterval);
+            isGameOver = false; // Restablecer el estado del juego
+            callback(); // Ejecutar la función pasada como callback
+        }
+    }, 1000);
+}
+
+// Función para actualizar la posición del módulo lunar
+/**
+ * Genera partículas para la explosión.
+ *
+ *    1.- Crea múltiples partículas con posiciones iniciales en el centro de la explosión.
+ *    2.- Asigna a cada partícula una dirección, velocidad y duración aleatorias.
+ *    3.- Almacena las partículas en el arreglo `explosionParticles`.
+ *
+ * @param {number} x Coordenada X del centro de la explosión.
+ * @param {number} y Coordenada Y del centro de la explosión.
+ * @returns {void} No retorna ningún valor.
+ */
+function createExplosion(x, y) {
+    explosionParticles = [];
+    for (let i = 0; i < 50; i++) {
+        explosionParticles.push({
+            x: x,
+            y: y,
+            radius: Math.random() * 5 + 2, // Tamaño aleatorio
+            color: `rgba(${Math.random() * 255}, ${Math.random() * 150}, 0, 1)`, // Colores cálidos
+            velocityX: (Math.random() - 0.5) * 4, // Velocidad horizontal
+            velocityY: (Math.random() - 0.5) * 4, // Velocidad vertical
+            life: Math.random() * 60 + 30, // Duración en frames
+        });
+    }
+}
+
+// Función para iniciar el juego
+/**
+     * Verifica si el módulo aterriza correctamente en la zona de aterrizaje.
+     *
+     * Este método evalúa si el módulo espacial cumple con las condiciones necesarias para un aterrizaje exitoso:
+     *    1.- Comprueba si el módulo está dentro de los límites de la zona de aterrizaje (coordenadas x e y).
+     *    2.- Verifica si la velocidad vertical del módulo es segura para aterrizar.
+     *    3.- Si ambas condiciones se cumplen, ajusta la posición del módulo y muestra un mensaje de éxito.
+     *    4.- Si alguna condición falla, muestra un mensaje de colisión.
+     *    5.- Marca el juego como terminado y habilita el botón de reinicio.
+     *
+     * @throws {Error} Si las propiedades `lander` o `landingZone` no están definidas.
+     * @example
+     *   Ejemplo de uso:
+     *   // Supongamos que `lander` y `landingZone` están definidos en el contexto global:
+     *   checkLanding();
+     *   // Resultado esperado:
+     *   // Si el módulo aterriza correctamente: message = '¡Aterrizaje exitoso!'
+     *   // Si falla el aterrizaje: message = '¡Te has estrellado!'
+     */
 function checkLanding() {
     const withinLandingZone =
         lander.x > landingZone.x && // El lado izquierdo del módulo está dentro de la zona
@@ -999,37 +852,187 @@ function checkLanding() {
     showRestartButton = true;
 }
 
-// Modificar la función draw para incluir las partículas de la explosión
-function draw() {
-    if (!isGameOver) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGround();
-    drawBase();
-    drawLander();
-    drawExplosionParticles(); // Dibujar partículas de la explosión
-    drawLabels();
-    drawMusicButton(); // Dibujar el botón de música
-    drawCanvasBorder(); // Dibujar el borde del canvas
-}
-
+// Función para reproducir el sonido de explosión
 /**
- * Reproduce un sonido de explosión.
- *
- *    1.- Genera múltiples tonos descendentes para simular una explosión.
- *    2.- Utiliza la función `playBeep` para reproducir cada tono.
- *
- * @returns {void} No retorna ningún valor.
- */
-function playExplosionSound() {
-    const explosionTones = [
-        { freq: 400, duration: 100 },
-        { freq: 300, duration: 100 },
-        { freq: 200, duration: 100 },
-        { freq: 100, duration: 100 },
-    ];
-
-    let delay = 0;
-    explosionTones.forEach(tone => {
-        setTimeout(() => playBeep(tone.freq, tone.duration), delay);
-        delay += tone.duration;
-    });
+     * Restablece las propiedades del módulo lunar a sus valores iniciales.
+     *
+     * Detalles del flujo de ejecución:
+     *    1.- Establece la posición horizontal del módulo lunar en el centro del lienzo.
+     *    2.- Establece la posición vertical del módulo lunar a una altura inicial de 100 píxeles.
+     *    3.- Reinicia las velocidades horizontal y vertical del módulo lunar a 0.
+     *    4.- Restaura el nivel de combustible del módulo lunar al 100%.
+     *
+     * @example
+     *   Ejemplo de uso:
+     *   resetLander();
+     *   // El módulo lunar se reinicia a su posición inicial con velocidad y combustible restaurados.
+     */
+function resetLander() {
+    lander.x = canvas.width / 2;
+    lander.y = 100;
+    lander.velocityX = 0;
+    lander.velocityY = 0;
+    lander.fuel = 100;
+    lander.rotationAngle = 0; // Restaurar el ángulo de rotación
 }
+
+//Restaura los parámetros de inicio de la partida
+/**
+     * Restablece el estado del juego a su configuración inicial.
+     *
+     * Detalles del flujo de ejecución:
+     *    1.- Limpia el mensaje mostrado en pantalla.
+     *    2.- Oculta el botón de reinicio del juego.
+     *    3.- Establece el estado del juego como no finalizado.
+     *    4.- Llama a la función `resetLander` para reiniciar el estado del módulo lunar.
+     *    5.- Genera un nuevo terreno llamando a la función `generateGround`.
+     *    6.- Calcula una nueva posición aleatoria para la zona de aterrizaje dentro de los límites del lienzo.
+     *    7.- Restaura el ángulo de rotación del módulo lunar a 0.
+     *
+     * @throws {Error} Si alguna de las funciones auxiliares (`resetLander` o `generateGround`) falla durante su ejecución.
+     * @example
+     *   Ejemplo de uso:
+     *   resetGameState();
+     *   // Reinicia el juego y prepara un nuevo escenario para jugar.
+     */
+function resetGameState() {
+    message = '';
+    showRestartButton = false;
+    //isGameOver = false;
+    gameTitle.style.display = 'none'; //Ocultar la capa del título html
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    resetLander();
+    generateGround();
+    landingZone.x = Math.random() * (canvas.width - landingZone.width);
+
+}
+
+//Reinicia el juego
+/**
+     * Reinicia el estado del juego y prepara el entorno para un nuevo inicio.
+     *
+     * Detalles del flujo de ejecución:
+     *    1.- Llama a la función `resetGameState` para restablecer el estado del juego a su configuración inicial.
+     *    2.- Muestra una cuenta regresiva mediante la función `showCountdown`, que recibe como parámetro la función `startGame` para iniciar el juego al finalizar la cuenta regresiva.
+     *    3.- Establece el foco en el elemento del lienzo (`canvas`) para garantizar que los controles del juego estén activos.
+     *
+     * @throws {Error} Si alguna de las funciones internas (`resetGameState`, `showCountdown`, o `canvas.focus`) falla durante su ejecución.
+     * @example
+     *   Ejemplo de uso:
+     *   restartGame();
+     *   // Resultado: El estado del juego se reinicia, se muestra una cuenta regresiva, y el foco se establece en el lienzo.
+     */
+function restartGame() {
+    resetGameState();
+    showCountdown(gameLoop); // Cambiar startGame por gameLoop
+    canvas.focus();
+}
+
+// Iniciar el juego
+/**
+     * Inicia el juego configurando el estado inicial y mostrando una cuenta regresiva.
+     *
+     * Detalles del flujo de ejecución:
+     *    1.- Oculta el botón de inicio para evitar que se vuelva a presionar.
+     *    2.- Restablece el estado del juego a su configuración inicial.
+     *    3.- Muestra una cuenta regresiva antes de iniciar el bucle principal del juego.
+     *    4.- Asegura que el foco esté en la ventana del navegador para capturar eventos correctamente.
+     *
+     * @throws {Error} Si ocurre algún problema al restablecer el estado del juego o al iniciar la cuenta regresiva.
+     * @example
+     *   Ejemplo de uso:
+     *   startGame();
+     */
+function startGame() {
+    startButton.style.display = 'none'; // Ocultar el botón  
+
+    playSong();
+    resetGameState();
+    showCountdown(gameLoop);
+    window.focus(); // Asegurar que el foco esté en el window
+}
+
+// Lógica del juego
+/**
+     * Actualiza el estado del módulo lunar en cada fotograma del juego.
+     *
+     *    1.- Verifica si el juego ha terminado; si es así, detiene la ejecución.
+     *    2.- Aplica la gravedad al módulo lunar, incrementando su velocidad vertical.
+     *    3.- Si el empuje está activo y hay combustible disponible:
+     *        - Calcula el empuje vectorial basado en el ángulo de rotación.
+     *        - Ajusta las velocidades horizontal y vertical del módulo.
+     *        - Reduce la cantidad de combustible disponible.
+     *    4.- Actualiza la posición del módulo lunar en el eje X e Y según sus velocidades.
+     *    5.- Limita la posición del módulo dentro del área de juego:
+     *        - Si el módulo excede los límites horizontales, lo reposiciona y detiene su velocidad horizontal.
+     *        - Si el módulo excede los límites verticales superiores, lo reposiciona y detiene su velocidad vertical.
+     *        - Si el módulo excede los límites verticales inferiores, lo reposiciona, marca el juego como terminado y verifica el aterrizaje.
+     *
+     * @throws {Error} Si ocurre un error inesperado durante la actualización del estado del módulo.
+     * @example
+     *   Ejemplo de uso:
+     *   // Llamar a esta función en cada iteración del bucle principal del juego.
+     *   update();
+     */
+function update() {
+    if (isGameOver) return;
+
+    // Aplicar gravedad
+    lander.velocityY += gravity;
+
+    // Aplicar empuje vectorial
+    if (isThrusting && lander.fuel > 0) {
+        const angleInRadians = (lander.rotationAngle * Math.PI) / 180;
+        lander.velocityX += Math.sin(angleInRadians) * -thrust;
+        lander.velocityY += Math.cos(angleInRadians) * thrust;
+        lander.fuel -= 0.1; // Reducir el combustible
+    }
+
+    // Actualizar posición
+    lander.x += lander.velocityX;
+    lander.y += lander.velocityY;
+
+    // Limitar posición dentro del área de juego
+    if (lander.x < 0) {
+        lander.x = 0;
+        lander.velocityX = 0;
+    }
+    if (lander.x > canvas.width) {
+        lander.x = canvas.width;
+        lander.velocityX = 0;
+    }
+    if (lander.y < 100) {
+        lander.y = 100;
+        lander.velocityY = 0;
+    }
+    if (lander.y > canvas.height) { // Cambiar la verificación para el nuevo pivote
+        lander.y = canvas.height;
+        isGameOver = true;
+        checkLanding();
+    }
+}
+
+// Bucle principal
+/**
+     * Bucle principal del juego.
+     *
+     *    1.- Llama a la función `update` para actualizar el estado del juego.
+     *    2.- Llama a la función `draw` para renderizar los elementos del juego en pantalla.
+     *    3.- Utiliza `requestAnimationFrame` para programar la siguiente iteración del bucle.
+     *
+     * @function gameLoop
+     * @throws {Error} Si alguna de las funciones `update` o `draw` lanza un error.
+     * @example
+     *   Ejemplo de uso:
+     *   gameLoop(); // Inicia el bucle principal del juego.
+     */
+function gameLoop() {
+    if (!isGameOver) update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+
+//#endregion        
+
+

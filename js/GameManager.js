@@ -18,7 +18,7 @@ let showRestartButton = false;
 
 const lander = {
     x: canvas.width / 2,
-    y: 50,
+    y: 100,
     width: 20,
     height: 30,
     velocityX: 0,
@@ -127,8 +127,19 @@ function playSong() {
 
 // Función para detener la canción
 function stopSong() {
-    isMusicPlaying=false
     clearInterval(musicInterval);
+}
+
+// Método para alternar la música
+function toggleMusic() {
+    if (isMusicPlaying) {
+        isMusicPlaying = false;
+        stopSong();        
+    } else {
+        isMusicPlaying = true;
+        playSong();
+    }    
+    draw(); // Redibujar para actualizar el estado del botón inmediatamente
 }
 
 // Manejo de controles
@@ -160,12 +171,7 @@ window.addEventListener('keydown', /**
     } else if (e.code === 'ArrowLeft') { // Rotar en sentido antihorario
         lander.rotationAngle -= 5; // Actualizar propiedad en lander
     } else if (e.code === 'KeyS') {
-        if (isMusicPlaying) {
-            stopSong();
-        } else {
-            playSong();
-        }
-        isMusicPlaying = !isMusicPlaying;
+        toggleMusic(); // Usar el nuevo método
     }
 });
 window.addEventListener('keyup', /**
@@ -192,42 +198,59 @@ window.addEventListener('keyup', /**
     }
 });
 
-// Manejo de controles con ratón
-canvas.addEventListener('mousedown', (e) => {
+// Función para manejar clics o toques en el canvas
+function handleInputEvent(eventType, x, y) {
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const inputX = x - rect.left;
+    const inputY = y - rect.top;
 
-    if (clickY < lander.y && lander.fuel > 0) {
-        isThrusting = true; // Activar empuje si el clic está por encima del módulo
-    } else if (clickX > lander.x) {
-        lander.rotationAngle += 5; // Rotar en sentido horario si el clic está a la derecha
-    } else if (clickX < lander.x) {
-        lander.rotationAngle -= 5; // Rotar en sentido antihorario si el clic está a la izquierda
+    if (
+        inputX > musicButton.x &&
+        inputX < musicButton.x + musicButton.width &&
+        inputY > musicButton.y &&
+        inputY < musicButton.y + musicButton.height
+    ) {
+        toggleMusic(); // Gestionar botón de música
+    } else if (eventType === 'start') {
+        if (inputY < lander.y && lander.fuel > 0) {
+            activateThrust(); // Gestionar impulso
+        } else if (inputX > lander.x) {
+            rotateLander(5); // Rotar en sentido horario
+        } else if (inputX < lander.x) {
+            rotateLander(-5); // Rotar en sentido antihorario
+        }
+    } else if (eventType === 'end') {
+        deactivateThrust(); // Detener impulso
     }
-});
+}
 
-canvas.addEventListener('mouseup', () => {
-    isThrusting = false; // Desactivar empuje al soltar el clic
-});
+// Función para activar el impulso
+function activateThrust() {
+    isThrusting = true;
+}
 
-// Manejo de controles táctiles
+// Función para desactivar el impulso
+function deactivateThrust() {
+    isThrusting = false;
+}
+
+// Función para rotar el módulo
+function rotateLander(angle) {
+    lander.rotationAngle += angle;
+}
+
+// Unificar eventos de mouse
+canvas.addEventListener('mousedown', (e) => handleInputEvent('start', e.clientX, e.clientY));
+canvas.addEventListener('mouseup', (e) => handleInputEvent('end', e.clientX, e.clientY));
+
+// Unificar eventos táctiles
 canvas.addEventListener('touchstart', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const touchX = e.touches[0].clientX - rect.left;
-    const touchY = e.touches[0].clientY - rect.top;
-
-    if (touchY < lander.y && lander.fuel > 0) {
-        isThrusting = true; // Activar empuje si el toque está por encima del módulo
-    } else if (touchX > lander.x) {
-        lander.rotationAngle += 5; // Rotar en sentido horario si el toque está a la derecha
-    } else if (touchX < lander.x) {
-        lander.rotationAngle -= 5; // Rotar en sentido antihorario si el toque está a la izquierda
-    }
+    const touch = e.touches[0];
+    handleInputEvent('start', touch.clientX, touch.clientY);
 });
-
-canvas.addEventListener('touchend', () => {
-    isThrusting = false; // Desactivar empuje al finalizar el toque
+canvas.addEventListener('touchend', (e) => {
+    const touch = e.changedTouches[0];
+    handleInputEvent('end', touch.clientX, touch.clientY);
 });
 
 // Generar suelo con montañas
@@ -356,6 +379,8 @@ canvas.addEventListener('touchend', () => {
         lander.y = landingZone.y; // Ajustar la posición para que esté justo en la zona de aterrizaje
         message = '¡Aterrizaje exitoso!';
     } else {
+        createExplosion(lander.x, lander.y); // Crear partículas de explosión
+        playExplosionSound(); // Reproducir sonido de explosión
         message = '¡Te has estrellado!';
     }
     isGameOver = true;
@@ -530,6 +555,17 @@ canvas.addEventListener('touchend', () => {
     ctx.font = '20px Arial';
     ctx.fillText(`Velocidad de caída: ${lander.velocityY.toFixed(2)}`, 10, 50, 150);
 
+    // Dibujar título "MoonLander" en colores
+    const title = "MoonLander";
+    const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
+    const titleX = canvas.width / 2 - 150; // Centrar el texto
+    const titleY = 50;
+    ctx.font = '50px "Comic Sans MS", cursive, sans-serif';
+    for (let i = 0; i < title.length; i++) {
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillText(title[i], titleX + i * 30, titleY); // Espaciado entre letras
+    }
+
     // Mostrar mensaje si existe
     if (message) {
         ctx.fillStyle = 'white';
@@ -551,6 +587,56 @@ canvas.addEventListener('touchend', () => {
     }
 }
 
+// Dimensiones y posición del botón de música
+const musicButton = {
+    x: canvas.width - 110,
+    y: 10,
+    width: 100,
+    height: 40,
+};
+
+// Función para dibujar el botón de música
+function drawMusicButton() {
+    console.log('el estado de isMusicPlaying es: ', isMusicPlaying);
+    ctx.fillStyle = isMusicPlaying ? 'green' : 'red';
+    ctx.fillRect(musicButton.x, musicButton.y, musicButton.width, musicButton.height);
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.fillText(isMusicPlaying ? 'Música: ON' : 'Música: OFF', musicButton.x + 10, musicButton.y + 25);
+}
+
+// Manejar clics en el botón de música
+canvas.addEventListener('mouseup', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    if (
+        clickX > musicButton.x &&
+        clickX < musicButton.x + musicButton.width &&
+        clickY > musicButton.y &&
+        clickY < musicButton.y + musicButton.height
+    ) {
+        toggleMusic(); // Invocar toggleMusic al hacer clic
+    }
+});
+
+// Manejar toques en el botón de música
+canvas.addEventListener('touchend', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touchX = e.touches[0].clientX - rect.left;
+    const touchY = e.touches[0].clientY - rect.top;
+
+    if (
+        touchX > musicButton.x &&
+        touchX < musicButton.x + musicButton.width &&
+        touchY > musicButton.y &&
+        touchY < musicButton.y + musicButton.height
+    ) {
+        toggleMusic(); // Usar el nuevo método
+    }
+});
+
 /**
      * Dibuja el contenido principal de la escena en un lienzo HTML5.
      *
@@ -569,11 +655,21 @@ canvas.addEventListener('touchend', () => {
      *   draw();
      */
     function draw() {
-    if(!isGameOver) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!isGameOver) ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGround();
-    drawBase();
-    drawLander();
+    drawBase();  
+    drawLander();    
+    drawExplosionParticles(); // Dibujar partículas de la explosión
     drawLabels();
+    drawMusicButton(); // Dibujar el botón de música
+    drawCanvasBorder(); // Dibujar el borde del canvas
+}
+
+// Función para dibujar el borde del canvas
+function drawCanvasBorder() {
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
 }
 
 // Verificar clics en el canvas
@@ -651,12 +747,13 @@ canvas.setAttribute('tabindex', '0');
      *   // El módulo lunar se reinicia a su posición inicial con velocidad y combustible restaurados.
      */
     function resetLander() {
-    lander.x = canvas.width / 2;
-    lander.y = 100;
-    lander.velocityX = 0;
-    lander.velocityY = 0;
-    lander.fuel = 100;
-}
+        lander.x = canvas.width / 2;
+        lander.y = 100;
+        lander.velocityX = 0;
+        lander.velocityY = 0;
+        lander.fuel = 100;
+        lander.rotationAngle = 0; // Restaurar el ángulo de rotación
+    }
 
 /**
      * Restablece el estado del juego a su configuración inicial.
@@ -680,10 +777,12 @@ canvas.setAttribute('tabindex', '0');
     message = '';
     showRestartButton = false;
     //isGameOver = false;
-    resetLander();
+    gameTitle.style.display='none'; //Ocultar la capa del título html
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    resetLander();    
     generateGround();
     landingZone.x = Math.random() * (canvas.width - landingZone.width);
-    lander.rotationAngle = 0; // Restaurar el ángulo de rotación
+    
 }
 
 /**
@@ -742,7 +841,7 @@ canvas.setAttribute('tabindex', '0');
      *   restartGame();
      *   // Resultado: El estado del juego se reinicia, se muestra una cuenta regresiva, y el foco se establece en el lienzo.
      */
-    function restartGame() {
+    function restartGame() {    
     resetGameState();
     showCountdown(gameLoop); // Cambiar startGame por gameLoop
     canvas.focus();
@@ -764,7 +863,8 @@ canvas.setAttribute('tabindex', '0');
      *   startGame();
      */
     function startGame() {        
-    startButton.style.display = 'none'; // Ocultar el botón
+    startButton.style.display = 'none'; // Ocultar el botón  
+    
     playSong();
     resetGameState();
     showCountdown(gameLoop);
@@ -786,10 +886,150 @@ canvas.setAttribute('tabindex', '0');
      *   gameLoop(); // Inicia el bucle principal del juego.
      */
     function gameLoop() {
-    update();
+    if(!isGameOver) update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
 // Asignar evento al botón
 startButton.addEventListener('click', startGame);
+
+/**
+ * Dibuja una explosión en el lienzo en la posición del módulo lunar.
+ *
+ *    1.- Dibuja múltiples círculos concéntricos con colores degradados para simular una explosión.
+ *    2.- Utiliza un bucle para generar los círculos con radios crecientes.
+ *    3.- La explosión se centra en las coordenadas actuales del módulo lunar.
+ *
+ * @param {number} x Coordenada X del centro de la explosión.
+ * @param {number} y Coordenada Y del centro de la explosión.
+ * @returns {void} No retorna ningún valor.
+ * @example
+ *   drawExplosion(lander.x, lander.y);
+ */
+function drawExplosion(x, y) {
+    const colors = ['red', 'orange', 'yellow', 'white'];
+    for (let i = 0; i < colors.length; i++) {
+        ctx.beginPath();
+        ctx.arc(x, y, (i + 1) * 15, 0, Math.PI * 2);
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+    }
+}
+
+// Almacenar partículas de la explosión
+let explosionParticles = [];
+
+/**
+ * Genera partículas para la explosión.
+ *
+ *    1.- Crea múltiples partículas con posiciones iniciales en el centro de la explosión.
+ *    2.- Asigna a cada partícula una dirección, velocidad y duración aleatorias.
+ *    3.- Almacena las partículas en el arreglo `explosionParticles`.
+ *
+ * @param {number} x Coordenada X del centro de la explosión.
+ * @param {number} y Coordenada Y del centro de la explosión.
+ * @returns {void} No retorna ningún valor.
+ */
+function createExplosion(x, y) {
+    explosionParticles = [];
+    for (let i = 0; i < 50; i++) {
+        explosionParticles.push({
+            x: x,
+            y: y,
+            radius: Math.random() * 5 + 2, // Tamaño aleatorio
+            color: `rgba(${Math.random() * 255}, ${Math.random() * 150}, 0, 1)`, // Colores cálidos
+            velocityX: (Math.random() - 0.5) * 4, // Velocidad horizontal
+            velocityY: (Math.random() - 0.5) * 4, // Velocidad vertical
+            life: Math.random() * 60 + 30, // Duración en frames
+        });
+    }
+}
+
+/**
+ * Dibuja y actualiza las partículas de la explosión.
+ *
+ *    1.- Recorre las partículas activas y las dibuja en el lienzo.
+ *    2.- Actualiza la posición de cada partícula según su velocidad.
+ *    3.- Reduce la vida de cada partícula y las elimina si su vida llega a 0.
+ *
+ * @returns {void} No retorna ningún valor.
+ */
+function drawExplosionParticles() {
+    explosionParticles.forEach((particle, index) => {
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fillStyle = particle.color;
+        ctx.fill();
+
+        // Actualizar posición y vida
+        particle.x += particle.velocityX;
+        particle.y += particle.velocityY;
+        particle.life--;
+
+        // Reducir opacidad gradualmente
+        const alpha = Math.max(0, particle.life / 60);
+        particle.color = particle.color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, `rgba($1,$2,$3,${alpha})`);
+
+        // Eliminar partículas sin vida
+        if (particle.life <= 0) {
+            explosionParticles.splice(index, 1);
+        }
+    });
+}
+
+// Modificar la función checkLanding para usar la nueva explosión
+function checkLanding() {
+    const withinLandingZone =
+        lander.x > landingZone.x && // El lado izquierdo del módulo está dentro de la zona
+        lander.x < landingZone.x + landingZone.width && // El lado derecho del módulo está dentro de la zona
+        lander.y >= landingZone.y; // La parte inferior del módulo toca la zona de aterrizaje
+
+    const safeSpeed = lander.velocityY < 1;
+
+    if (withinLandingZone && safeSpeed) {
+        lander.y = landingZone.y; // Ajustar la posición para que esté justo en la zona de aterrizaje
+        message = '¡Aterrizaje exitoso!';
+    } else {
+        createExplosion(lander.x, lander.y); // Crear partículas de explosión
+        playExplosionSound(); // Reproducir sonido de explosión
+        message = '¡Te has estrellado!';
+    }
+    isGameOver = true;
+    showRestartButton = true;
+}
+
+// Modificar la función draw para incluir las partículas de la explosión
+function draw() {
+    if (!isGameOver) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGround();
+    drawBase();
+    drawLander();
+    drawExplosionParticles(); // Dibujar partículas de la explosión
+    drawLabels();
+    drawMusicButton(); // Dibujar el botón de música
+    drawCanvasBorder(); // Dibujar el borde del canvas
+}
+
+/**
+ * Reproduce un sonido de explosión.
+ *
+ *    1.- Genera múltiples tonos descendentes para simular una explosión.
+ *    2.- Utiliza la función `playBeep` para reproducir cada tono.
+ *
+ * @returns {void} No retorna ningún valor.
+ */
+function playExplosionSound() {
+    const explosionTones = [
+        { freq: 400, duration: 100 },
+        { freq: 300, duration: 100 },
+        { freq: 200, duration: 100 },
+        { freq: 100, duration: 100 },
+    ];
+
+    let delay = 0;
+    explosionTones.forEach(tone => {
+        setTimeout(() => playBeep(tone.freq, tone.duration), delay);
+        delay += tone.duration;
+    });
+}

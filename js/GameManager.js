@@ -565,7 +565,7 @@ function drawLander() {
         ctx.beginPath();
         ctx.moveTo(-lander.width / 4, 0); // Punto izquierdo bajo el módulo
         ctx.lineTo(lander.width / 4, 0); // Punto derecho bajo el módulo
-        ctx.lineTo(0, 10); // Punto inferior de la llamarada
+        ctx.lineTo(0, 15); // Punto inferior de la llamarada
         ctx.closePath();
         ctx.fillStyle = 'red';
         ctx.fill();
